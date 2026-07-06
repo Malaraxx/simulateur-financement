@@ -109,6 +109,32 @@
   .grade-txt b{font-size:.88rem;display:block}
   .grade-txt small{font-size:.78rem;color:var(--ink-soft)}
 
+  /* ---- Toggle de vue & réception agence ---- */
+  [hidden]{display:none!important}
+  .view-toggle{max-width:400px;margin-bottom:26px}
+  .lead-banner{
+    padding:14px 20px;border-radius:var(--radius);margin-bottom:18px;
+    background:var(--green-bg);border:1px solid var(--green);color:var(--ink);font-size:.9rem;font-weight:500;
+  }
+  .leads.card{padding:0;overflow:hidden}
+  .lead{display:flex;gap:16px;align-items:center;padding:16px 20px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .lead:last-child{border-bottom:none}
+  .grade.sm{width:40px;height:40px;font-size:1.2rem;border-radius:10px}
+  .lead-info{flex:1;min-width:220px}
+  .lead-info b{font-size:.9rem}
+  .lead-info .search{font-size:.84rem;color:var(--ink-soft)}
+  .lead-meta{font-size:.76rem;color:var(--ink-soft);margin-top:3px;font-variant-numeric:tabular-nums}
+  .lead-contact{font-size:.8rem;color:var(--ink-soft);filter:blur(5px);user-select:none;pointer-events:none;margin-top:3px}
+  .lead-buy{display:flex;align-items:center;gap:14px;margin-left:auto}
+  .lead-price{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1rem;text-align:right;font-variant-numeric:tabular-nums}
+  .lead-price small{display:block;font-size:.68rem;font-weight:500;color:var(--ink-soft)}
+  .btn-unlock{
+    font:inherit;font-size:.8rem;font-weight:600;padding:9px 14px;border-radius:9px;border:1px solid var(--ink);
+    background:var(--ink);color:#fff;cursor:pointer;white-space:nowrap;transition:opacity .15s;
+  }
+  .btn-unlock:hover{opacity:.85}
+  .btn-unlock:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+
   .note{font-size:.74rem;color:var(--ink-soft);margin-top:14px;line-height:1.5}
   .pitch{
     margin-top:22px;padding:18px 22px;border-radius:var(--radius);
@@ -128,7 +154,12 @@
   <h1>Votre capacité d'achat, en 30 secondes</h1>
   <p class="sub">Décrivez votre situation : on calcule votre budget réel selon les règles bancaires en vigueur (HCSF) et les taux du marché — et votre recherche devient un dossier pré-qualifié aux yeux des agences.</p>
 
-  <div class="grid">
+  <div class="seg view-toggle" id="viewToggle" role="group" aria-label="Choix de la vue">
+    <button aria-pressed="true" data-v="acheteur">Côté acheteur</button>
+    <button aria-pressed="false" data-v="agence">Côté agence</button>
+  </div>
+
+  <div class="grid" id="viewAcheteur">
     <!-- ===== Formulaire ===== -->
     <div class="card" aria-label="Votre situation">
       <div class="field">
@@ -211,6 +242,85 @@
       <div class="pitch"><b>Pourquoi ce module ?</b> Chaque recherche devient un lead financièrement qualifié : l'acheteur connaît son vrai budget, l'agence reçoit un contact avec un score de solvabilité vérifiable — et un contact vérifié se monétise mieux.</div>
     </div>
   </div>
+
+  <!-- ===== Vue agence : réception de leads (démo) ===== -->
+  <section id="viewAgence" hidden aria-label="Réception de leads pré-qualifiés">
+    <div class="lead-banner">Chaque contact arrive pré-qualifié : <b>vous savez qui prioriser avant de payer.</b></div>
+    <div class="card leads">
+      <div class="lead">
+        <div class="grade sm">A</div>
+        <div class="lead-info">
+          <b>Camille R.</b> <span class="search">— T3 Lille Vauban, budget 210 000 €</span>
+          <div class="lead-meta">Capacité vérifiée : 182 000 € · Apport : 45 000 € · Reçu le 06/07/2026</div>
+          <div class="lead-contact" aria-hidden="true">Camille Rousseau · 06 12 34 56 78 · c.rousseau@…</div>
+        </div>
+        <div class="lead-buy">
+          <div class="lead-price">49 €</div>
+          <button class="btn-unlock" type="button">Débloquer le contact</button>
+        </div>
+      </div>
+      <div class="lead">
+        <div class="grade sm b">B</div>
+        <div class="lead-info">
+          <b>Thomas B.</b> <span class="search">— Maison 4 pièces Marcq-en-Barœul, budget 320 000 €</span>
+          <div class="lead-meta">Capacité vérifiée : 265 000 € · Apport : 38 000 € · Reçu le 05/07/2026</div>
+          <div class="lead-contact" aria-hidden="true">Thomas Berger · 06 98 76 54 32 · t.berger@…</div>
+        </div>
+        <div class="lead-buy">
+          <div class="lead-price">29 €</div>
+          <button class="btn-unlock" type="button">Débloquer le contact</button>
+        </div>
+      </div>
+      <div class="lead">
+        <div class="grade sm b">B</div>
+        <div class="lead-info">
+          <b>Inès M.</b> <span class="search">— T2 Lille Centre, budget 175 000 €</span>
+          <div class="lead-meta">Capacité vérifiée : 152 000 € · Apport : 20 000 € · Reçu le 05/07/2026</div>
+          <div class="lead-contact" aria-hidden="true">Inès Marchal · 07 11 22 33 44 · i.marchal@…</div>
+        </div>
+        <div class="lead-buy">
+          <div class="lead-price">29 €</div>
+          <button class="btn-unlock" type="button">Débloquer le contact</button>
+        </div>
+      </div>
+      <div class="lead">
+        <div class="grade sm c">C</div>
+        <div class="lead-info">
+          <b>Julien D.</b> <span class="search">— T3 Villeneuve-d'Ascq, budget 195 000 €</span>
+          <div class="lead-meta">Capacité vérifiée : 168 000 € · Apport : 8 000 € · Reçu le 04/07/2026</div>
+          <div class="lead-contact" aria-hidden="true">Julien Delcourt · 06 55 44 33 22 · j.delcourt@…</div>
+        </div>
+        <div class="lead-buy">
+          <div class="lead-price">15 €</div>
+          <button class="btn-unlock" type="button">Débloquer le contact</button>
+        </div>
+      </div>
+      <div class="lead">
+        <div class="grade sm c">C</div>
+        <div class="lead-info">
+          <b>Sarah L.</b> <span class="search">— T4 Roubaix, budget 160 000 €</span>
+          <div class="lead-meta">Capacité vérifiée : 145 000 € · Apport : 0 € · Reçu le 03/07/2026</div>
+          <div class="lead-contact" aria-hidden="true">Sarah Lemaire · 07 66 77 88 99 · s.lemaire@…</div>
+        </div>
+        <div class="lead-buy">
+          <div class="lead-price">15 €</div>
+          <button class="btn-unlock" type="button">Débloquer le contact</button>
+        </div>
+      </div>
+      <div class="lead">
+        <div class="grade sm d">D</div>
+        <div class="lead-info">
+          <b>Karim T.</b> <span class="search">— T2 Tourcoing, budget 120 000 €</span>
+          <div class="lead-meta">Capacité vérifiée : 96 000 € · Apport : 0 € · Reçu le 02/07/2026</div>
+          <div class="lead-contact" aria-hidden="true">Karim Toumi · 06 12 21 12 21 · k.toumi@…</div>
+        </div>
+        <div class="lead-buy">
+          <div class="lead-price">Gratuit<small>orienté courtier</small></div>
+          <button class="btn-unlock" type="button">Débloquer le contact</button>
+        </div>
+      </div>
+    </div>
+  </section>
 </div>
 
 <script>
@@ -238,6 +348,17 @@
     });
   }
   segInit('dur','dur'); segInit('job','job'); segInit('bien','bien'); segInit('prof','prof');
+
+  // ---- Toggle vue acheteur / vue agence ----
+  const vt = $('viewToggle');
+  vt.querySelectorAll('button').forEach(b=>{
+    b.addEventListener('click',()=>{
+      vt.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed','false'));
+      b.setAttribute('aria-pressed','true');
+      $('viewAcheteur').hidden = b.dataset.v!=='acheteur';
+      $('viewAgence').hidden = b.dataset.v!=='agence';
+    });
+  });
 
   ['rev','chg','app'].forEach(id=>$(id).addEventListener('input',calc));
 
