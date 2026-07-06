@@ -135,6 +135,18 @@
   .btn-unlock:hover{opacity:.85}
   .btn-unlock:focus-visible{outline:2px solid var(--green);outline-offset:2px}
 
+  /* ---- Analyse en langage naturel ---- */
+  .smart{margin-bottom:22px;padding:16px 18px}
+  .smart-row{display:flex;gap:10px;flex-wrap:wrap}
+  .smart-row input{
+    flex:1;min-width:240px;font:inherit;font-size:.88rem;padding:10px 14px;
+    border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--ink);
+  }
+  .smart-row input::placeholder{color:var(--ink-soft);opacity:.75}
+  .smart-row input:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+  .smart-out{font-size:.78rem;color:var(--ink-soft);margin-top:8px}
+  .flash{outline:2px solid var(--green)!important;outline-offset:3px;border-radius:6px}
+
   .note{font-size:.74rem;color:var(--ink-soft);margin-top:14px;line-height:1.5}
   .pitch{
     margin-top:22px;padding:18px 22px;border-radius:var(--radius);
@@ -159,7 +171,17 @@
     <button aria-pressed="false" data-v="agence">Côté agence</button>
   </div>
 
-  <div class="grid" id="viewAcheteur">
+  <section id="viewAcheteur">
+
+  <div class="card smart">
+    <div class="smart-row">
+      <input type="text" id="nl" placeholder="Décrivez votre situation... ex : on gagne 5 200 € à deux, 25 000 € d'apport, on vise du neuf sur 25 ans" aria-label="Décrivez votre situation">
+      <button class="btn-unlock" id="nlBtn" type="button">Analyser</button>
+    </div>
+    <div class="smart-out" id="nlOut" hidden></div>
+  </div>
+
+  <div class="grid">
     <!-- ===== Formulaire ===== -->
     <div class="card" aria-label="Votre situation">
       <div class="field">
@@ -242,6 +264,8 @@
       <div class="pitch"><b>Pourquoi ce module ?</b> Chaque recherche devient un lead financièrement qualifié : l'acheteur connaît son vrai budget, l'agence reçoit un contact avec un score de solvabilité vérifiable — et un contact vérifié se monétise mieux.</div>
     </div>
   </div>
+
+  </section>
 
   <!-- ===== Vue agence : réception de leads (démo) ===== -->
   <section id="viewAgence" hidden aria-label="Réception de leads pré-qualifiés">
@@ -359,6 +383,85 @@
       $('viewAgence').hidden = b.dataset.v!=='agence';
     });
   });
+
+  // ---- Analyse en langage naturel (regex locales, aucun appel réseau) ----
+  const AMT_RE = /(\d{1,3}(?:\s\d{3})+|\d+(?:[.,]\d+)?)\s*(k€|k\b|€|euros?)?/gi;
+  function parseAmt(num, suf){
+    let v = parseFloat(num.replace(/\s/g,'').replace(',','.'));
+    if(suf && suf.toLowerCase().charAt(0)==='k') v *= 1000;
+    return v;
+  }
+  function findAmounts(text){
+    const out = []; let m;
+    AMT_RE.lastIndex = 0;
+    while((m = AMT_RE.exec(text))){
+      if(/^\s*ans\b/.test(text.slice(m.index + m[0].length))) continue; // durée, pas un montant
+      out.push({v: parseAmt(m[1], m[2]), start: m.index, end: m.index + m[0].length});
+    }
+    return out;
+  }
+  // montant le plus proche du mot-clé (fenêtre de 35 caractères)
+  function nearestAmount(text, amts, kwRe){
+    const m = text.match(kwRe);
+    if(!m) return null;
+    const ks = m.index, ke = m.index + m[0].length;
+    let best = null, bestD = 36;
+    for(const a of amts){
+      const d = a.end <= ks ? ks - a.end : a.start >= ke ? a.start - ke : 0;
+      if(d < bestD){ bestD = d; best = a; }
+    }
+    return best ? best.v : null;
+  }
+  function flash(el){ el.classList.add('flash'); setTimeout(()=>el.classList.remove('flash'), 1000); }
+  function setSlider(id, v, min, max, step){
+    const val = Math.min(max, Math.max(min, Math.round(v/step)*step));
+    $(id).value = val; flash($(id));
+    return val;
+  }
+  function analyse(){
+    const text = $('nl').value.toLowerCase();
+    const amts = findAmounts(text);
+    const found = [];
+
+    const chg = /(?:aucun|sans|pas de)\s+(?:cr[ée]dit|charge)/.test(text)
+      ? 0 : nearestAmount(text, amts, /cr[ée]dits?|rembours\w+|charges?|mensualit[ée]s?/);
+    let rev = nearestAmount(text, amts, /gagn\w+|revenus?|salaires?/);
+    if(rev===null){
+      const byMois = nearestAmount(text, amts, /\bmois\b/);
+      if(byMois!==null && byMois!==chg) rev = byMois;
+    }
+    const app = /(?:aucun|sans|pas\s+d\W{0,2})\s*apport/.test(text)
+      ? 0 : nearestAmount(text, amts, /apport|de c[ôo]t[ée]|[ée]pargn\w*/);
+
+    if(rev!==null) found.push('revenus ' + eur(setSlider('rev', rev, 1200, 15000, 100)));
+    if(app!==null) found.push('apport ' + eur(setSlider('app', app, 0, 250000, 2500)));
+    if(chg!==null) found.push('charges ' + eur(setSlider('chg', chg, 0, 3000, 50)));
+
+    const dur = text.match(/\b(15|20|25)\s*ans\b/);
+    if(dur){ document.querySelector('#dur button[data-v="'+dur[1]+'"]').click(); flash($('dur')); found.push(dur[1]+' ans'); }
+
+    const bien = /\bneuf(?:ve)?\b/.test(text) ? 'neuf' : /\bancien(?:ne)?\b/.test(text) ? 'ancien' : null;
+    if(bien){ document.querySelector('#bien button[data-v="'+bien+'"]').click(); flash($('bien')); found.push(bien); }
+
+    const job = /\bcdi\b/.test(text) ? 'cdi'
+      : /\bcdd\b/.test(text) ? 'cdd'
+      : /fonctionnaire/.test(text) ? 'fonc'
+      : /ind[ée]pendant|freelance|auto[- ]?entrepreneu\w*/.test(text) ? 'indep' : null;
+    if(job){
+      document.querySelector('#job button[data-v="'+job+'"]').click(); flash($('job'));
+      found.push({cdi:'CDI', cdd:'CDD', fonc:'fonctionnaire', indep:'indépendant'}[job]);
+    }
+
+    calc();
+    const out = $('nlOut');
+    out.hidden = false;
+    out.textContent = found.length
+      ? 'Compris : ' + found.join(' · ')
+      : 'Rien détecté — indiquez des montants en € (revenus, apport, crédits), une durée (15/20/25 ans), neuf/ancien ou votre situation pro.';
+    if(found.length) document.querySelector('.passport').scrollIntoView({behavior:'smooth', block:'start'});
+  }
+  $('nlBtn').addEventListener('click', analyse);
+  $('nl').addEventListener('keydown', e=>{ if(e.key==='Enter') analyse(); });
 
   ['rev','chg','app'].forEach(id=>$(id).addEventListener('input',calc));
 
