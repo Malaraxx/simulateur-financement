@@ -109,6 +109,16 @@
   .grade-txt b{font-size:.88rem;display:block}
   .grade-txt small{font-size:.78rem;color:var(--ink-soft)}
 
+  .improve{padding:14px 24px 16px;background:var(--bg);border-top:1px solid var(--line)}
+  .imp-title{font-size:.75rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:8px}
+  .improve ul{list-style:none}
+  .improve li{font-size:.8rem;color:var(--ink-soft);padding-left:16px;position:relative;margin-bottom:6px;line-height:1.5;font-variant-numeric:tabular-nums}
+  .improve li:last-child{margin-bottom:0}
+  .improve li::before{content:'→';position:absolute;left:0;color:var(--green);font-weight:600}
+  .improve li b{color:var(--ink)}
+  .improve li.opt{padding-left:0}
+  .improve li.opt::before{content:none}
+
   /* ---- Toggle de vue & réception agence ---- */
   [hidden]{display:none!important}
   .view-toggle{max-width:400px;margin-bottom:26px}
@@ -258,6 +268,10 @@
             <b id="gradeTitle">Dossier très solide</b>
             <small id="gradeSub">Score de pré-qualification transmis à l'agence avec votre demande de contact.</small>
           </div>
+        </div>
+        <div class="improve" id="improve">
+          <div class="imp-title" id="impTitle">Pour améliorer votre dossier</div>
+          <ul id="impList"></ul>
         </div>
       </div>
       <p class="note">Calcul indicatif fondé sur la norme HCSF (endettement max. 35 % assurance comprise), assurance emprunteur estimée à 0,36 %/an et taux moyens constatés en juillet 2026 par les observatoires de courtiers (≈ 3,3 % sur 15 ans, 3,4 % sur 20 ans, 3,5 % sur 25 ans). Ne constitue ni une offre ni un accord de financement.</p>
@@ -512,6 +526,44 @@
     const gEl=$('grade'); gEl.textContent=g; gEl.className='grade '+cls;
     $('gradeTitle').textContent=title;
     const sEl=$('stamp'); sEl.textContent=stampTxt; sEl.className='stamp '+stampCls;
+
+    // ---- Conseils d'amélioration (mêmes règles que le scoring, du levier le plus fort au plus faible) ----
+    const tips = [];
+    if(g!=='A'){
+      if(app===0){
+        tips.push('Constituez un apport couvrant au moins les frais de notaire (~<b>'+eur(budgetTotal-prixBien)+'</b>) : c’est le premier critère bancaire — et cela débloque votre plafonnement à C.');
+      } else if(ratioApp<0.10){
+        // palier 10 % : (app+y)/(capital+app+y) = 0,10  →  app+y = capital/9
+        const y = Math.ceil((capital/9 - app)/100)*100;
+        if(y>0) tips.push('Avec <b>+'+eur(y)+'</b> d’apport, vous atteignez 10 % du budget et passez un palier de scoring.');
+      } else if(ratioApp<0.20){
+        // palier 20 % : app+y = capital/4
+        const y = Math.ceil((capital/4 - app)/100)*100;
+        if(y>0) tips.push('Avec <b>+'+eur(y)+'</b> d’apport, vous atteignez 20 % du budget et passez le palier de scoring supérieur.');
+      }
+      if(chg>0){
+        const capSansChg = (rev*0.35)/(facteur + ASSUR/12);
+        tips.push('Solder vos crédits en cours (<b>'+eur(chg)+'/mois</b>) augmenterait votre capacité d’emprunt de <b>'+eur(capSansChg-capital)+'</b>.');
+      }
+      if(rav<1200 && state.dur!==25){
+        const t25 = RATES[state.prof][25]/100/12, n25 = 300;
+        const mens25 = capital*(t25/(1-Math.pow(1+t25,-n25))) + capital*ASSUR/12;
+        tips.push('En allongeant sur 25 ans, la mensualité du même capital baisserait d’environ <b>'+eur(mensMax-mens25)+'/mois</b>, soulageant votre reste à vivre.');
+      }
+      if(state.job==='cdd' || state.job==='indep'){
+        tips.push('Un co-emprunteur en CDI ou l’ancienneté (3 bilans pour les indépendants) renforce fortement le dossier.');
+      }
+    }
+    const impBox = $('improve'), impList = $('impList');
+    if(g==='A'){
+      impBox.hidden = false; $('impTitle').hidden = true;
+      impList.innerHTML = '<li class="opt">Dossier optimal — vous pouvez négocier votre taux (profil « Bon profil » ci-contre).</li>';
+    } else if(tips.length){
+      impBox.hidden = false; $('impTitle').hidden = false;
+      impList.innerHTML = tips.slice(0,3).map(t=>'<li>'+t+'</li>').join('');
+    } else {
+      impBox.hidden = true;
+    }
   }
   calc();
 })();
