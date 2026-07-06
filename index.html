@@ -283,6 +283,8 @@
     else if(pts>=6){g='B';title='Dossier solide';cls='b';stampTxt='PRÉ-QUALIFIÉ';stampCls='';}
     else if(pts>=4){g='C';title='Dossier à consolider';cls='c';stampTxt='À CONSOLIDER';stampCls='warn';}
     else {g='D';title='Dossier fragile en l\u2019état';cls='d';stampTxt='NON QUALIFIÉ';stampCls='bad';}
+    // Sans apport, plafond à C : l'apport doit couvrir a minima les frais de notaire (pratique HCSF)
+    if(app===0 && (g==='A' || g==='B')){g='C';title='Dossier à consolider';cls='c';stampTxt='À CONSOLIDER';stampCls='warn';}
     const gEl=$('grade'); gEl.textContent=g; gEl.className='grade '+cls;
     $('gradeTitle').textContent=title;
     const sEl=$('stamp'); sEl.textContent=stampTxt; sEl.className='stamp '+stampCls;
