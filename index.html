@@ -119,6 +119,27 @@
   .improve li.opt{padding-left:0}
   .improve li.opt::before{content:none}
 
+  /* ---- Saisie directe & comparateur de durées ---- */
+  .lab output{cursor:pointer}
+  .lab output:hover{color:var(--green)}
+  .out-edit{
+    font:inherit;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:.95rem;
+    width:110px;padding:1px 6px;text-align:right;border:1px solid var(--green);border-radius:6px;background:var(--card);
+  }
+  .out-edit:focus{outline:none}
+  .durcmp{margin-top:14px;padding:16px 18px}
+  .dc-title{font-size:.75rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:8px}
+  .dc-table{width:100%;border-collapse:collapse;font-size:.8rem}
+  .dc-table th,.dc-table td{padding:7px 8px;text-align:right;font-variant-numeric:tabular-nums;border-bottom:1px solid var(--line)}
+  .dc-table tr:last-child td{border-bottom:none}
+  .dc-table th{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:.78rem}
+  .dc-table .lab3{text-align:left;color:var(--ink-soft);font-weight:500}
+  .dc-table .on{background:var(--green-bg)}
+  .dc-table th.on{color:var(--green)}
+  .dc-table [data-v]{cursor:pointer}
+  .dc-table [data-v]:hover{background:var(--bg)}
+  .footer-note{text-align:center;margin-top:34px}
+
   /* ---- Toggle de vue & réception agence ---- */
   [hidden]{display:none!important}
   .view-toggle{max-width:400px;margin-bottom:26px}
@@ -274,6 +295,10 @@
           <ul id="impList"></ul>
         </div>
       </div>
+      <div class="card durcmp" aria-label="Comparaison des durées de prêt">
+        <div class="dc-title">Comparer les durées</div>
+        <table class="dc-table" id="dcTable"></table>
+      </div>
       <p class="note">Calcul indicatif fondé sur la norme HCSF (endettement max. 35 % assurance comprise), assurance emprunteur estimée à 0,36 %/an et taux moyens constatés en juillet 2026 par les observatoires de courtiers (≈ 3,3 % sur 15 ans, 3,4 % sur 20 ans, 3,5 % sur 25 ans). Ne constitue ni une offre ni un accord de financement.</p>
       <div class="pitch"><b>Pourquoi ce module ?</b> Chaque recherche devient un lead financièrement qualifié : l'acheteur connaît son vrai budget, l'agence reçoit un contact avec un score de solvabilité vérifiable — et un contact vérifié se monétise mieux.</div>
     </div>
@@ -359,6 +384,8 @@
       </div>
     </div>
   </section>
+
+  <p class="note footer-note">Prototype conçu et développé par Florian Malara — analyste risque de crédit</p>
 </div>
 
 <script>
@@ -477,6 +504,41 @@
   $('nlBtn').addEventListener('click', analyse);
   $('nl').addEventListener('keydown', e=>{ if(e.key==='Enter') analyse(); });
 
+  // ---- Saisie directe : clic sur la valeur d'un slider ----
+  [['rev','revOut'],['chg','chgOut'],['app','appOut']].forEach(([sid,oid])=>{
+    const out = $(oid);
+    out.title = 'Cliquer pour saisir une valeur';
+    out.addEventListener('click', ()=>{
+      if(out.querySelector('input')) return;
+      const slider = $(sid);
+      const inp = document.createElement('input');
+      inp.type='number'; inp.min=slider.min; inp.max=slider.max; inp.step=slider.step; inp.value=slider.value;
+      inp.className='out-edit';
+      out.textContent=''; out.appendChild(inp);
+      inp.focus(); inp.select();
+      let done = false;
+      function commit(){
+        if(done) return; done = true;
+        const raw = inp.value==='' ? +slider.value : +inp.value;
+        const step = +slider.step;
+        slider.value = Math.min(+slider.max, Math.max(+slider.min, Math.round(raw/step)*step));
+        if(inp.parentNode===out) out.removeChild(inp);
+        calc();
+      }
+      inp.addEventListener('blur', commit);
+      inp.addEventListener('keydown', e=>{
+        if(e.key==='Enter'){ e.preventDefault(); commit(); }
+        if(e.key==='Escape'){ done = true; if(inp.parentNode===out) out.removeChild(inp); calc(); }
+      });
+    });
+  });
+
+  // ---- Comparateur de durées : clic sur une colonne = changement de durée ----
+  $('dcTable').addEventListener('click', e=>{
+    const cell = e.target.closest('[data-v]');
+    if(cell) document.querySelector('#dur button[data-v="'+cell.dataset.v+'"]').click();
+  });
+
   ['rev','chg','app'].forEach(id=>$(id).addEventListener('input',calc));
 
   function calc(){
@@ -564,6 +626,29 @@
     } else {
       impBox.hidden = true;
     }
+
+    // ---- Comparateur de durées (mensualité = plafond 35 %, identique ; capacité et coût varient) ----
+    const dcRows = {'Capacité':{}, 'Mensualité':{}, 'Coût du crédit':{}};
+    [15,20,25].forEach(d=>{
+      const rd = RATES[state.prof][d], td = rd/100/12, nd = d*12;
+      const fd = td/(1-Math.pow(1+td,-nd));
+      const cd = mensMax/(fd + ASSUR/12);
+      dcRows['Capacité'][d] = eur(cd);
+      dcRows['Mensualité'][d] = eur(mensMax);
+      dcRows['Coût du crédit'][d] = eur(mensMax*nd - cd);
+    });
+    const dcCell = (tag,d,txt) => d===state.dur
+      ? '<'+tag+' class="on">'+txt+'</'+tag+'>'
+      : '<'+tag+' data-v="'+d+'">'+txt+'</'+tag+'>';
+    let dc = '<thead><tr><th class="lab3"></th>';
+    [15,20,25].forEach(d=>{ dc += dcCell('th', d, d+' ans'); });
+    dc += '</tr></thead><tbody>';
+    for(const lab in dcRows){
+      dc += '<tr><td class="lab3">'+lab+'</td>';
+      [15,20,25].forEach(d=>{ dc += dcCell('td', d, dcRows[lab][d]); });
+      dc += '</tr>';
+    }
+    $('dcTable').innerHTML = dc + '</tbody>';
   }
   calc();
 })();
