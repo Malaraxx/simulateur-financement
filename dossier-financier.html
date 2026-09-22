@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dossier financier — Maquette d'intégration sur une annonce</title>
+<meta name="description" content="Maquette : rubrique Dossier financier intégrée à la page d'une annonce immobilière — simulation pour ce bien, grade de pré-qualification, pièces à réunir, transmission à l'agence.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0C1B2A; --ink-soft:#3D4C5E; --ink-mute:#6B7A8C;
+    --bg:#F5F7FA; --card:#FFFFFF; --line:#E2E8F0;
+    --green:#0E8A5F; --green-bg:#E9F6F0;
+    --amber:#B8711A; --amber-bg:#FBF3E6;
+    --red:#C0392B; --red-bg:#FBECEA;
+    --blue:#2F5D8A; --blue-bg:#EAF1F8;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+  h1,h2,h3,.num{font-family:'Space Grotesk',sans-serif;letter-spacing:-.01em}
+  .num{font-variant-numeric:tabular-nums}
+  button{font:inherit;cursor:pointer}
+  a{color:inherit}
+
+  /* ---- barre maquette ---- */
+  .protobar{background:var(--ink);color:#fff;font-size:.8rem}
+  .protobar .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:9px;padding-bottom:9px;flex-wrap:wrap}
+  .protobar b{font-weight:600}
+  .toggle{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:99px;padding:5px 12px;font-size:.78rem}
+  .toggle[aria-pressed=true]{background:#F4C46A;color:var(--ink);border-color:#F4C46A}
+
+  /* ---- header site ---- */
+  .site{background:var(--card);border-bottom:1px solid var(--line)}
+  .site .wrap{display:flex;align-items:center;justify-content:space-between;height:60px;gap:12px}
+  .logo{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.15rem}
+  .logo span{color:var(--green)}
+  .site nav{display:flex;gap:18px;font-size:.88rem;color:var(--ink-soft)}
+  @media(max-width:640px){.site nav{display:none}}
+
+  .crumb{font-size:.8rem;color:var(--ink-mute);padding:16px 0 12px}
+
+  /* ---- annotations ---- */
+  .anno{display:none;border:1.5px dashed #E0A43A;background:#FFF8EA;color:#6B4A12;border-radius:10px;padding:10px 12px 10px 42px;font-size:.82rem;position:relative;margin:0 0 14px}
+  .anno::before{content:attr(data-n);position:absolute;left:10px;top:9px;width:22px;height:22px;border-radius:50%;background:#E0A43A;color:#fff;font-weight:700;font-size:.75rem;display:grid;place-items:center}
+  .anno b{color:#4F360B}
+  body.show-anno .anno{display:block}
+
+  /* ---- galerie ---- */
+  .gallery{display:grid;grid-template-columns:2fr 1fr 1fr;grid-template-rows:170px 170px;gap:8px;border-radius:var(--radius);overflow:hidden;margin-bottom:22px}
+  .ph{position:relative;display:flex;align-items:flex-end;padding:12px;color:#fff;font-size:.78rem;font-weight:500;text-shadow:0 1px 2px rgba(0,0,0,.25)}
+  .ph:first-child{grid-row:1/3}
+  .ph1{background:linear-gradient(135deg,#C9B79C,#8E7B62)}
+  .ph2{background:linear-gradient(135deg,#B7C4C9,#6F8791)}
+  .ph3{background:linear-gradient(135deg,#D8C7B0,#A58F74)}
+  .ph4{background:linear-gradient(135deg,#A9B8A6,#6D8069)}
+  .ph5{background:linear-gradient(135deg,#C4B5C0,#86738A)}
+  .ph svg{position:absolute;inset:0;margin:auto;opacity:.35;width:44px;height:44px}
+  .ph .more{position:absolute;right:12px;bottom:12px;background:rgba(12,27,42,.55);padding:4px 10px;border-radius:99px}
+  @media(max-width:720px){.gallery{grid-template-columns:1fr 1fr;grid-template-rows:200px 110px}.ph:first-child{grid-row:auto;grid-column:1/3}.ph4,.ph5{display:none}}
+
+  /* ---- annonce ---- */
+  .listing{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:28px;align-items:start;margin-bottom:40px}
+  @media(max-width:900px){.listing{grid-template-columns:1fr}}
+  .l-title{font-size:clamp(1.35rem,3vw,1.75rem);font-weight:600;margin-bottom:4px}
+  .l-loc{color:var(--ink-soft);font-size:.92rem;margin-bottom:14px}
+  .l-price{font-family:'Space Grotesk',sans-serif;font-size:1.8rem;font-weight:700}
+  .l-price small{font-size:.85rem;font-weight:500;color:var(--ink-mute);margin-left:8px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 22px}
+  .chip{background:var(--card);border:1px solid var(--line);border-radius:99px;padding:5px 12px;font-size:.82rem}
+  .dpe{display:inline-flex;align-items:center;gap:6px}
+  .dpe i{font-style:normal;background:#8BC34A;color:#fff;font-weight:700;border-radius:4px;padding:0 6px;font-size:.75rem}
+  .l-desc h3{font-size:1.02rem;margin-bottom:8px}
+  .l-desc p{color:var(--ink-soft);font-size:.93rem;margin-bottom:10px;max-width:640px}
+  .feat{display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;margin-top:14px;font-size:.88rem;max-width:560px}
+  .feat div{display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding:6px 0}
+  .feat span:first-child{color:var(--ink-mute)}
+
+  .side{position:sticky;top:16px;display:flex;flex-direction:column;gap:14px}
+  @media(max-width:900px){.side{position:static}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px}
+  .agency{display:flex;gap:12px;align-items:center;margin-bottom:14px}
+  .agency .av{width:42px;height:42px;border-radius:10px;background:var(--blue-bg);color:var(--blue);display:grid;place-items:center;font-weight:700;font-family:'Space Grotesk'}
+  .agency b{display:block;font-size:.92rem}
+  .agency span{font-size:.8rem;color:var(--ink-mute)}
+  .btn{display:block;width:100%;text-align:center;border-radius:10px;padding:11px 14px;font-weight:600;font-size:.9rem;border:1px solid var(--line);background:var(--card);color:var(--ink);text-decoration:none}
+  .btn.primary{background:var(--green);border-color:var(--green);color:#fff}
+  .btn.dark{background:var(--ink);border-color:var(--ink);color:#fff}
+  .btn:focus-visible,.seg button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+
+  .hook{border:1.5px solid var(--green);background:linear-gradient(180deg,var(--green-bg),#fff 70%)}
+  .hook .k{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--green)}
+  .hook h3{font-size:1.08rem;margin:4px 0 6px}
+  .hook p{font-size:.85rem;color:var(--ink-soft);margin-bottom:12px}
+  .hook .est{display:flex;justify-content:space-between;align-items:baseline;background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:.82rem;color:var(--ink-soft)}
+  .hook .est b{font-family:'Space Grotesk';font-size:1.15rem;color:var(--ink)}
+  .hook small{display:block;font-size:.72rem;color:var(--ink-mute);margin-top:8px;text-align:center}
+
+  /* ---- dossier ---- */
+  .dossier{border-top:1px solid var(--line);background:#fff;padding:40px 0 56px}
+  .d-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+  .d-head .k{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--green)}
+  .d-head h2{font-size:clamp(1.35rem,3vw,1.8rem);font-weight:600}
+  .d-head p{color:var(--ink-soft);font-size:.9rem}
+  .bien-recap{display:flex;gap:10px;align-items:center;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:.84rem}
+  .bien-recap .mini{width:38px;height:38px;border-radius:8px;background:linear-gradient(135deg,#C9B79C,#8E7B62)}
+
+  .presets{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:22px;font-size:.8rem;color:var(--ink-mute)}
+  .presets button{border:1px solid var(--line);background:var(--bg);border-radius:99px;padding:5px 12px;font-size:.8rem;color:var(--ink)}
+  .presets button:hover{border-color:var(--ink-soft)}
+
+  .d-grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:24px;align-items:start}
+  @media(max-width:900px){.d-grid{grid-template-columns:1fr}}
+
+  .step{background:var(--bg);border:1px solid var(--line);border-radius:var(--radius);padding:20px;margin-bottom:14px}
+  .step-h{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+  .step-h .n{width:26px;height:26px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-weight:700;font-size:.8rem;font-family:'Space Grotesk'}
+  .step-h h3{font-size:1rem;font-weight:600}
+  .step-h span{margin-left:auto;font-size:.75rem;color:var(--ink-mute)}
+  .f{margin-bottom:14px}
+  .f:last-child{margin-bottom:0}
+  .f label,.f .lbl{display:block;font-size:.8rem;font-weight:600;margin-bottom:6px}
+  .f .hint{font-weight:400;color:var(--ink-mute);font-size:.74rem;margin-top:4px}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media(max-width:480px){.row2{grid-template-columns:1fr}}
+  .inp{position:relative}
+  .inp input,select{width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 40px 9px 12px;font:inherit;font-size:.92rem;background:#fff;color:var(--ink);font-variant-numeric:tabular-nums}
+  select{padding-right:12px}
+  .inp em{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-style:normal;font-size:.8rem;color:var(--ink-mute)}
+  .seg{display:flex;gap:6px;flex-wrap:wrap}
+  .seg button{flex:1;min-width:52px;padding:8px;font-size:.84rem;font-weight:500;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--ink)}
+  .seg button[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .check{display:flex;gap:9px;align-items:flex-start;font-size:.84rem}
+  .check input{margin-top:3px;accent-color:var(--green);width:16px;height:16px}
+  .fixed{display:flex;justify-content:space-between;font-size:.84rem;background:#fff;border:1px dashed var(--line);border-radius:9px;padding:9px 12px;color:var(--ink-soft)}
+  .fixed b{color:var(--ink)}
+  .hidden{display:none!important}
+
+  /* ---- résultat ---- */
+  .result{position:sticky;top:16px}
+  @media(max-width:900px){.result{position:static}}
+  .verdict{border-radius:var(--radius);padding:18px 20px;margin-bottom:14px;display:flex;gap:14px;align-items:flex-start}
+  .verdict .ico{width:34px;height:34px;flex:none;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:700}
+  .verdict h3{font-size:1.08rem;margin-bottom:2px}
+  .verdict p{font-size:.86rem;color:var(--ink-soft)}
+  .v-ok{background:var(--green-bg)} .v-ok .ico{background:var(--green)} .v-ok h3{color:var(--green)}
+  .v-mid{background:var(--amber-bg)} .v-mid .ico{background:var(--amber)} .v-mid h3{color:var(--amber)}
+  .v-ko{background:var(--red-bg)} .v-ko .ico{background:var(--red)} .v-ko h3{color:var(--red)}
+
+  .r-card{border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin-bottom:14px;background:#fff}
+  .r-card h4{font-size:.75rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-mute);margin-bottom:12px}
+  .big{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .big .num{font-size:2.2rem;font-weight:700;line-height:1}
+  .big span{color:var(--ink-soft);font-size:.88rem}
+  .sub-rent{font-size:.82rem;color:var(--ink-soft);margin-top:6px}
+
+  .gauge{margin:16px 0 4px}
+  .gauge .lab{display:flex;justify-content:space-between;font-size:.8rem;margin-bottom:6px}
+  .gauge .lab b{font-family:'Space Grotesk'}
+  .bar{position:relative;height:10px;border-radius:99px;background:var(--line);overflow:visible}
+  .bar .fill{position:absolute;left:0;top:0;bottom:0;border-radius:99px;transition:width .25s,background .25s}
+  .bar .mark{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ink);left:70%}
+  .bar .mark::after{content:'35 %';position:absolute;top:18px;left:-12px;font-size:.68rem;color:var(--ink-mute)}
+  .gauge-scale{height:14px}
+
+  .rows{display:grid;gap:0}
+  .rows div{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:.87rem}
+  .rows div:last-child{border-bottom:0}
+  .rows span:first-child{color:var(--ink-soft)}
+  .rows .num{font-weight:600}
+  .rows .tot{font-weight:700}
+  .rows .tot span:first-child{color:var(--ink)}
+  .rows .sep{border-top:1.5px solid var(--ink);}
+
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:560px){.two{grid-template-columns:1fr}}
+
+  .budget{background:var(--blue-bg);border-color:transparent}
+  .budget .num{font-size:1.5rem;font-weight:700;color:var(--blue)}
+  .budget p{font-size:.82rem;color:var(--ink-soft);margin-top:4px}
+  .budget a{display:inline-block;margin-top:10px;font-size:.82rem;font-weight:600;color:var(--blue)}
+
+  .grade-wrap{display:flex;gap:16px;align-items:flex-start}
+  .grade{width:64px;height:64px;flex:none;border-radius:14px;display:grid;place-items:center;font-family:'Space Grotesk';font-size:2rem;font-weight:700;color:#fff}
+  .gA{background:var(--green)} .gB{background:#3E9E6E} .gC{background:var(--amber)} .gD{background:var(--red)}
+  .crit{list-style:none;display:grid;gap:6px;font-size:.84rem;flex:1}
+  .crit li{display:flex;gap:8px;align-items:flex-start}
+  .crit li i{font-style:normal;width:18px;height:18px;flex:none;border-radius:50%;display:grid;place-items:center;font-size:.7rem;font-weight:700;color:#fff;margin-top:2px}
+  .crit .ok i{background:var(--green)} .crit .warn i{background:var(--amber)} .crit .ko i{background:var(--red)}
+  .crit small{display:block;color:var(--ink-mute);font-size:.76rem}
+
+  .levers{list-style:none;display:grid;gap:8px}
+  .levers li{font-size:.86rem;background:var(--bg);border-radius:10px;padding:10px 12px;display:flex;gap:10px}
+  .levers li b{font-family:'Space Grotesk'}
+  .levers li::before{content:'→';color:var(--green);font-weight:700}
+
+  /* ---- bas : pièces + transmission ---- */
+  .bottom{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:10px}
+  @media(max-width:900px){.bottom{grid-template-columns:1fr}}
+  .docs-h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+  .docs-h h3{font-size:1.02rem}
+  .prog{height:6px;border-radius:99px;background:var(--line);margin-bottom:14px;overflow:hidden}
+  .prog div{height:100%;background:var(--green);width:0;transition:width .2s}
+  .docs{list-style:none;display:grid;gap:4px}
+  .docs label{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border-radius:9px;font-size:.86rem;cursor:pointer}
+  .docs label:hover{background:var(--bg)}
+  .docs input{accent-color:var(--green);width:16px;height:16px;margin-top:3px}
+  .docs small{display:block;color:var(--ink-mute);font-size:.75rem}
+
+  .lead{border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:var(--bg);margin:12px 0 14px}
+  .lead-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px}
+  .lead-top b{font-size:.9rem}
+  .pill{font-size:.72rem;font-weight:700;border-radius:99px;padding:3px 10px;color:#fff}
+  .lead .rows div{font-size:.82rem;padding:5px 0}
+  .consent{margin-bottom:12px}
+  .sent{display:none;background:var(--green-bg);color:var(--green);font-weight:600;font-size:.86rem;border-radius:10px;padding:10px 12px;margin-top:10px;text-align:center}
+  .actions{display:grid;gap:8px}
+  .btn[disabled]{opacity:.45;cursor:not-allowed}
+
+  .legal{font-size:.74rem;color:var(--ink-mute);margin-top:28px;max-width:860px}
+  footer{padding:22px 0 40px;font-size:.78rem;color:var(--ink-mute);text-align:center}
+</style>
+</head>
+<body>
+
+<div class="protobar">
+  <div class="wrap">
+    <span><b>Maquette</b> · Rubrique « Dossier financier » intégrée à une page annonce · données fictives</span>
+    <button class="toggle" id="annoBtn" aria-pressed="false">Afficher les annotations</button>
+  </div>
+</div>
+
+<div class="site">
+  <div class="wrap">
+    <div class="logo">fit<span>your</span>place</div>
+    <nav><a>Recherche</a><a>Favoris</a><a>Espace agences</a></nav>
+  </div>
+</div>
+
+<main class="wrap">
+  <div class="crumb">Recherche › Lille › Vauban-Esquermes › Appartement 3 pièces</div>
+
+  <div class="anno" data-n="1"><b>Le contexte :</b> l'utilisateur a cliqué sur une annonce depuis la recherche conversationnelle. C'est le moment où son intérêt est le plus fort — c'est là qu'on lui pose la vraie question : « est-ce que <em>ce</em> bien est faisable pour moi ? »</div>
+
+  <div class="gallery" aria-label="Photos du bien (illustrations)">
+    <div class="ph ph1"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.5"><path d="M3 11l9-7 9 7v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/></svg>Séjour lumineux · 28 m²</div>
+    <div class="ph ph2">Cuisine ouverte</div>
+    <div class="ph ph3">Chambre 1</div>
+    <div class="ph ph4">Balcon</div>
+    <div class="ph ph5">Salle d'eau<span class="more">+ 6 photos</span></div>
+  </div>
+
+  <div class="listing">
+    <div>
+      <h1 class="l-title">Appartement 3 pièces avec balcon</h1>
+      <div class="l-loc">Lille · Vauban-Esquermes (59000)</div>
+      <div class="l-price num" id="lPrice">245 000 €<small>3 603 €/m²</small></div>
+      <div class="chips">
+        <span class="chip">68 m²</span><span class="chip">3 pièces</span><span class="chip">2 chambres</span>
+        <span class="chip">2ᵉ étage / 4</span><span class="chip">Balcon 6 m²</span><span class="chip">Cave</span>
+        <span class="chip dpe">DPE <i>C</i></span>
+      </div>
+      <div class="l-desc">
+        <h3>Description</h3>
+        <p>À deux pas du jardin Vauban et des facultés, bel appartement traversant de 68 m² au 2ᵉ étage d'une résidence de standing avec ascenseur. Séjour lumineux ouvert sur une cuisine équipée, deux chambres au calme côté cour, salle d'eau refaite, balcon exposé sud-ouest.</p>
+        <p>Double vitrage, chauffage individuel gaz, cave. Idéal première acquisition ou jeune couple. Charges de copropriété modérées.</p>
+        <div class="feat">
+          <div><span>Année de construction</span><span>1972</span></div>
+          <div><span>Charges copro.</span><span>1 320 €/an</span></div>
+          <div><span>Taxe foncière</span><span>1 150 €/an</span></div>
+          <div><span>Chauffage</span><span>Individuel gaz</span></div>
+          <div><span>Type</span><span>Ancien</span></div>
+          <div><span>Lots en copro.</span><span>24</span></div>
+        </div>
+      </div>
+    </div>
+
+    <aside class="side">
+      <div class="anno" data-n="2"><b>Le point d'entrée :</b> un encart à côté du contact agence, avec une mensualité indicative calculée sur le prix du bien. Il donne envie de cliquer sans rien demander.</div>
+      <div class="card hook">
+        <div class="k">Dossier financier</div>
+        <h3>Ce bien est-il finançable pour vous ?</h3>
+        <p>Votre budget réel, votre mensualité et les pièces à réunir — pour ce bien précis, en 1 minute.</p>
+        <div class="est"><span>Mensualité indicative<br><small style="text-align:left;margin:0">10 % d'apport · 25 ans</small></span><b id="hookMens">—</b></div>
+        <a class="btn primary" href="#dossier">Faire mon dossier financier →</a>
+        <small>Sans engagement · aucune donnée transmise sans votre accord</small>
+      </div>
+      <div class="card">
+        <div class="agency"><div class="av">AE</div><div><b>Agence Exemple Immobilier</b><span>Lille Vauban · agence vérifiée</span></div></div>
+        <button class="btn dark">Contacter l'agence</button>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<!-- ================= DOSSIER FINANCIER ================= -->
+<section class="dossier" id="dossier">
+  <div class="wrap">
+    <div class="d-head">
+      <div>
+        <div class="k">Dossier financier</div>
+        <h2>Pouvez-vous acheter ce bien ?</h2>
+        <p>Remplissez les 3 blocs — le résultat se met à jour en direct.</p>
+      </div>
+      <div class="bien-recap"><div class="mini"></div><div><b>Appartement 3P · Lille Vauban</b><br><span id="recapPrice" class="num">245 000 €</span> · ancien</div></div>
+    </div>
+
+    <div class="presets">Profils de démonstration :
+      <button data-preset="couple">Couple en CDI</button>
+      <button data-preset="solo">Jeune actif seul</button>
+      <button data-preset="indep">Indépendant</button>
+      <button data-preset="fragile">Sans apport, un CDD</button>
+    </div>
+
+    <div class="d-grid">
+      <!-- ===== Formulaire ===== -->
+      <div>
+        <div class="anno" data-n="3"><b>Les cases à remplir :</b> uniquement ce qu'un banquier regarde en premier — revenus, stabilité, charges, apport. Pas de pièce à fournir à ce stade, pas de compte obligatoire.</div>
+
+        <div class="step">
+          <div class="step-h"><div class="n">1</div><h3>Votre situation</h3><span>≈ 20 s</span></div>
+          <div class="f">
+            <div class="lbl">Vous achetez</div>
+            <div class="seg" id="nb" role="group" aria-label="Nombre d'emprunteurs">
+              <button data-v="1" aria-pressed="false">Seul(e)</button>
+              <button data-v="2" aria-pressed="true">À deux</button>
+            </div>
+          </div>
+          <div class="row2">
+            <div class="f">
+              <label for="r1">Revenus nets / mois <span id="r1lab">— vous</span></label>
+              <div class="inp"><input id="r1" type="number" inputmode="numeric" min="0" step="50"><em>€</em></div>
+            </div>
+            <div class="f" id="r2wrap">
+              <label for="r2">Revenus nets / mois — co-emprunteur</label>
+              <div class="inp"><input id="r2" type="number" inputmode="numeric" min="0" step="50"><em>€</em></div>
+            </div>
+          </div>
+          <div class="row2">
+            <div class="f">
+              <label for="c1">Situation pro. <span id="c1lab">— vous</span></label>
+              <select id="c1">
+                <option value="cdi">CDI (hors période d'essai)</option>
+                <option value="fonct">Fonctionnaire</option>
+                <option value="indep">Indépendant / libéral</option>
+                <option value="cdd">CDD / intérim</option>
+              </select>
+            </div>
+            <div class="f" id="c2wrap">
+              <label for="c2">Situation pro. — co-emprunteur</label>
+              <select id="c2">
+                <option value="cdi">CDI (hors période d'essai)</option>
+                <option value="fonct">Fonctionnaire</option>
+                <option value="indep">Indépendant / libéral</option>
+                <option value="cdd">CDD / intérim</option>
+              </select>
+            </div>
+          </div>
+          <div class="f">
+            <div class="lbl">Enfants à charge</div>
+            <div class="seg" id="enf" role="group" aria-label="Enfants à charge">
+              <button data-v="0" aria-pressed="true">0</button><button data-v="1" aria-pressed="false">1</button><button data-v="2" aria-pressed="false">2</button><button data-v="3" aria-pressed="false">3+</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-h"><div class="n">2</div><h3>Vos charges et votre apport</h3><span>≈ 20 s</span></div>
+          <div class="row2">
+            <div class="f">
+              <label for="cred">Crédits en cours</label>
+              <div class="inp"><input id="cred" type="number" inputmode="numeric" min="0" step="10"><em>€/mois</em></div>
+              <div class="hint">Auto, conso, étudiant…</div>
+            </div>
+            <div class="f">
+              <label for="pens">Autres charges fixes</label>
+              <div class="inp"><input id="pens" type="number" inputmode="numeric" min="0" step="10"><em>€/mois</em></div>
+              <div class="hint">Pension versée, LOA…</div>
+            </div>
+          </div>
+          <div class="row2">
+            <div class="f">
+              <label for="loyer">Loyer actuel</label>
+              <div class="inp"><input id="loyer" type="number" inputmode="numeric" min="0" step="10"><em>€/mois</em></div>
+              <div class="hint">Pour comparer — il disparaît à l'achat</div>
+            </div>
+            <div class="f">
+              <label for="apport">Apport personnel</label>
+              <div class="inp"><input id="apport" type="number" inputmode="numeric" min="0" step="1000"><em>€</em></div>
+              <div class="hint">Épargne mobilisable pour l'achat</div>
+            </div>
+          </div>
+          <div class="f">
+            <label class="check"><input type="checkbox" id="decouvert" checked> Aucun découvert sur mes comptes ces 3 derniers mois</label>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-h"><div class="n">3</div><h3>Le projet</h3><span>pré-rempli</span></div>
+          <div class="f">
+            <div class="fixed"><span>Bien</span><b>Appartement 3P · ancien · Lille</b></div>
+          </div>
+          <div class="row2">
+            <div class="f">
+              <label for="prix">Prix d'achat</label>
+              <div class="inp"><input id="prix" type="number" inputmode="numeric" min="0" step="1000"><em>€</em></div>
+              <div class="hint">Prix affiché — modifiable si négocié</div>
+            </div>
+            <div class="f">
+              <label for="trav">Travaux prévus</label>
+              <div class="inp"><input id="trav" type="number" inputmode="numeric" min="0" step="1000"><em>€</em></div>
+            </div>
+          </div>
+          <div class="f">
+            <div class="lbl">Durée du prêt</div>
+            <div class="seg" id="dur" role="group" aria-label="Durée du prêt">
+              <button data-v="15" aria-pressed="false">15 ans</button><button data-v="20" aria-pressed="false">20 ans</button><button data-v="25" aria-pressed="true">25 ans</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Résultat ===== -->
+      <div class="result">
+        <div class="anno" data-n="4"><b>Le résultat, pour ce bien :</b> un verdict clair, la mensualité comparée au loyer actuel, le taux d'endettement face à la règle bancaire des 35 % (HCSF) — et le budget maximum, qui renvoie vers la recherche.</div>
+
+        <div class="verdict" id="verdict"><div class="ico" id="vIco">✓</div><div><h3 id="vTitle">—</h3><p id="vText">—</p></div></div>
+
+        <div class="r-card">
+          <h4>Votre mensualité pour ce bien</h4>
+          <div class="big"><span class="num" id="mens">—</span><span>/ mois, assurance comprise</span></div>
+          <div class="sub-rent" id="vsLoyer"></div>
+          <div class="gauge">
+            <div class="lab"><span>Taux d'endettement</span><b id="endetLab">—</b></div>
+            <div class="bar"><div class="fill" id="endetFill"></div><div class="mark"></div></div>
+            <div class="gauge-scale"></div>
+          </div>
+          <div class="rows">
+            <div><span>Taux estimé</span><span class="num" id="taux">—</span></div>
+            <div><span>Coût total du crédit</span><span class="num" id="cout">—</span></div>
+            <div><span>Reste à vivre</span><span class="num" id="rav">—</span></div>
+          </div>
+        </div>
+
+        <div class="two">
+          <div class="r-card">
+            <h4>Plan de financement</h4>
+            <div class="rows">
+              <div><span>Prix du bien</span><span class="num" id="pfPrix">—</span></div>
+              <div><span>Frais de notaire (≈ 8 %)</span><span class="num" id="pfNot">—</span></div>
+              <div id="pfTravRow"><span>Travaux</span><span class="num" id="pfTrav">—</span></div>
+              <div><span>Garantie + dossier</span><span class="num" id="pfBank">—</span></div>
+              <div class="tot sep"><span>Coût total</span><span class="num" id="pfTot">—</span></div>
+              <div><span>– Apport</span><span class="num" id="pfApp">—</span></div>
+              <div class="tot"><span>Montant emprunté</span><span class="num" id="pfPret">—</span></div>
+            </div>
+          </div>
+          <div class="r-card budget">
+            <h4>Votre budget maximum</h4>
+            <div class="num" id="bMax">—</div>
+            <p id="bTxt">Prix de bien finançable avec votre profil, sur la durée choisie.</p>
+            <a id="bLink">Voir les biens dans mon budget →</a>
+          </div>
+        </div>
+
+        <div class="anno" data-n="5"><b>Le grade de pré-qualification :</b> A à D, sur des critères objectifs de banquier. C'est ce qui permet de dire à l'agence que le financement est « validé » — et d'orienter les profils fragiles vers le courtier partenaire.</div>
+        <div class="r-card">
+          <h4>Votre grade de dossier</h4>
+          <div class="grade-wrap">
+            <div class="grade" id="grade">—</div>
+            <ul class="crit" id="crit"></ul>
+          </div>
+        </div>
+
+        <div class="r-card" id="leverCard">
+          <h4>Pour améliorer votre dossier</h4>
+          <ul class="levers" id="levers"></ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== Pièces + transmission ===== -->
+    <div class="anno" data-n="6" style="margin-top:14px"><b>Du simulateur au dossier :</b> la liste des pièces s'adapte au profil (salarié, indépendant…). L'acheteur arrive en visite avec un dossier prêt — et, s'il le souhaite, l'agence reçoit un lead pré-qualifié, sans les revenus détaillés.</div>
+    <div class="bottom">
+      <div class="r-card">
+        <div class="docs-h"><h3>Pièces à réunir</h3><span class="num" id="docCount">0 / 0</span></div>
+        <div class="prog"><div id="docProg"></div></div>
+        <ul class="docs" id="docs"></ul>
+      </div>
+
+      <div class="r-card">
+        <h3 style="font-size:1.02rem;margin-bottom:4px">Partager mon dossier avec l'agence</h3>
+        <p style="font-size:.84rem;color:var(--ink-soft)">Voici exactement ce que l'agence recevra :</p>
+        <div class="lead">
+          <div class="lead-top"><b>Acheteur pré-qualifié · Appt 3P Vauban</b><span class="pill" id="lGrade">—</span></div>
+          <div class="rows">
+            <div><span>Financement</span><span id="lFin">—</span></div>
+            <div><span>Budget maximum</span><span class="num" id="lBud">—</span></div>
+            <div><span>Apport</span><span id="lApp">—</span></div>
+            <div><span>Pièces du dossier</span><span class="num" id="lDocs">—</span></div>
+            <div><span>Revenus détaillés</span><span>Non transmis</span></div>
+          </div>
+        </div>
+        <label class="check consent"><input type="checkbox" id="consent"> J'accepte que ces informations soient transmises à Agence Exemple Immobilier pour ce bien.</label>
+        <div class="actions">
+          <button class="btn primary" id="sendBtn" disabled>Envoyer mon dossier pré-qualifié</button>
+          <button class="btn" id="courtierBtn">Consolider mon dossier avec un courtier partenaire</button>
+        </div>
+        <div class="sent" id="sent">✓ Dossier transmis à l'agence (démonstration)</div>
+      </div>
+    </div>
+
+    <p class="legal">Simulation indicative, fondée sur la norme HCSF (taux d'endettement maximal de 35 % assurance comprise, durée maximale de 25 ans), des taux moyens constatés par les baromètres de courtiers en septembre 2026 (≈ 3,35 % sur 15 ans, 3,45 % sur 20 ans, 3,55 % sur 25 ans), une assurance emprunteur estimée à 0,36 %/an, des frais de notaire de 8 % dans l'ancien, des frais de garantie de 1,2 % du prêt et 800 € de frais de dossier. Elle ne constitue ni une offre de prêt, ni un accord de financement, ni un conseil en crédit : seul un établissement prêteur ou un intermédiaire habilité (IOBSP) peut instruire une demande.</p>
+  </div>
+</section>
+
+<footer>Maquette conçue par Florian Malara — analyste risque de crédit · bien, agence et photos fictifs</footer>
+
+<script>
+(function(){
+  // ---------- Paramètres ----------
+  const RATES = {
+    std:{15:3.35, 20:3.45, 25:3.55},   // moyenne Cafpi/Meilleurtaux/Pretto/Vousfinancer, sept. 2026
+    top:{15:3.10, 20:3.20, 25:3.30}    // ≈ "taux excellent" Meilleurtaux, sept. 2026
+  };
+  const ASSUR = 0.0036, NOTAIRE = 0.08, GARANTIE = 0.012, DOSSIER = 800, HCSF = 0.35;
+  const PRIX_ANNONCE = 245000, SURFACE = 68;
+
+  const PRESETS = {
+    couple: {nb:2, r1:2400, r2:2100, c1:'cdi', c2:'cdi', enf:1, cred:0, pens:0, loyer:850, apport:35000, prix:245000, trav:0, dur:25, dec:true},
+    solo:   {nb:1, r1:2600, r2:0, c1:'cdi', c2:'cdi', enf:0, cred:180, pens:0, loyer:650, apport:12000, prix:245000, trav:0, dur:25, dec:true},
+    indep:  {nb:1, r1:4300, r2:0, c1:'indep', c2:'cdi', enf:0, cred:0, pens:0, loyer:900, apport:48000, prix:245000, trav:8000, dur:20, dec:true},
+    fragile:{nb:2, r1:2300, r2:2100, c1:'cdd', c2:'cdi', enf:1, cred:0, pens:0, loyer:780, apport:0, prix:245000, trav:0, dur:25, dec:true}
+  };
+
+  const $ = id => document.getElementById(id);
+  const eur = n => Math.round(n).toLocaleString('fr-FR') + ' €';
+  const pct = (n,d=1) => (n*100).toLocaleString('fr-FR',{minimumFractionDigits:d,maximumFractionDigits:d}) + ' %';
+  const round1k = n => Math.floor(n/1000)*1000;
+  const state = {nb:2, enf:0, dur:25};
+
+  // ---------- Contrôles segmentés ----------
+  function seg(id, key){
+    $(id).querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+      state[key] = +b.dataset.v; syncSeg(id, key); update();
+    }));
+  }
+  function syncSeg(id, key){
+    $(id).querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', +b.dataset.v === state[key]));
+  }
+  seg('nb','nb'); seg('enf','enf'); seg('dur','dur');
+
+  ['r1','r2','c1','c2','cred','pens','loyer','apport','prix','trav','decouvert'].forEach(id =>
+    $(id).addEventListener('input', update));
+
+  function applyPreset(p){
+    state.nb = p.nb; state.enf = p.enf; state.dur = p.dur;
+    $('r1').value = p.r1; $('r2').value = p.r2; $('c1').value = p.c1; $('c2').value = p.c2;
+    $('cred').value = p.cred; $('pens').value = p.pens; $('loyer').value = p.loyer;
+    $('apport').value = p.apport; $('prix').value = p.prix; $('trav').value = p.trav; $('decouvert').checked = p.dec;
+    syncSeg('nb','nb'); syncSeg('enf','enf'); syncSeg('dur','dur');
+    update();
+  }
+  document.querySelectorAll('[data-preset]').forEach(b => b.addEventListener('click', () => applyPreset(PRESETS[b.dataset.preset])));
+
+  // ---------- Annotations ----------
+  $('annoBtn').addEventListener('click', e => {
+    const on = document.body.classList.toggle('show-anno');
+    e.currentTarget.setAttribute('aria-pressed', on);
+    e.currentTarget.textContent = on ? 'Masquer les annotations' : 'Afficher les annotations';
+  });
+
+  // ---------- Maths ----------
+  const val = id => Math.max(0, parseFloat($(id).value) || 0);
+  function factor(rate, dur){            // mensualité pour 1 € emprunté (crédit + assurance)
+    const t = rate/100/12, n = dur*12;
+    return t/(1-Math.pow(1+t,-n)) + ASSUR/12;
+  }
+  const loanFor = (prix, trav, apport) => Math.max(0, (prix*(1+NOTAIRE) + trav + DOSSIER - apport)/(1-GARANTIE));
+  const prixMaxFor = (loanMax, trav, apport) => Math.max(0, (loanMax*(1-GARANTIE) + apport - DOSSIER - trav)/(1+NOTAIRE));
+  const stableOf = c => c === 'cdi' || c === 'fonct' || c === 'indep';
+
+  // Mensualité d'accroche (10 % d'apport, 25 ans, taux moyen)
+  (function hook(){
+    const L = loanFor(PRIX_ANNONCE, 0, PRIX_ANNONCE*0.10);
+    $('hookMens').textContent = eur(L*factor(RATES.std[25],25)) + '/mois';
+  })();
+
+  function compute(o){
+    const R = o.r1 + (o.nb===2 ? o.r2 : 0);
+    const charges = o.cred + o.pens;
+    const contracts = o.nb===2 ? [o.c1,o.c2] : [o.c1];
+    const nStable = contracts.filter(stableOf).length;
+    const hasIndep = contracts.includes('indep');
+    const apportPct = o.apport / Math.max(1, o.prix);
+    const profil = (apportPct >= 0.20 && R >= 4000 && nStable === contracts.length && o.dec) ? 'top' : 'std';
+    const rate = RATES[profil][o.dur];
+    const k = factor(rate, o.dur);
+    const L = loanFor(o.prix, o.trav, o.apport);
+    const notaire = o.prix*NOTAIRE, bank = DOSSIER + GARANTIE*L;
+    const total = o.prix + notaire + o.trav + bank;
+    const mens = L*k;
+    const endet = R > 0 ? (mens + charges)/R : 1;
+    const cout = mens*o.dur*12 - L;
+    const rav = R - mens - charges;
+    const seuil = 800 + (o.nb===2 ? 400 : 0) + 300*o.enf;
+    const mMax = Math.max(0, HCSF*R - charges);
+    const Lmax = mMax/k;
+    const pMax = prixMaxFor(Lmax, o.trav, o.apport);
+    const frais = notaire + bank;
+    return {R, charges, contracts, nStable, hasIndep, profil, rate, k, L, notaire, bank, total, mens, endet, cout, rav, seuil, Lmax, pMax, frais, apportPct};
+  }
+
+  function grade(o, x){
+    const crit = [];
+    // 1. Endettement
+    if (x.endet <= 0.33) crit.push(['ok', 'Endettement de ' + pct(x.endet), 'Sous le plafond bancaire de 35 %']);
+    else if (x.endet <= HCSF) crit.push(['warn', 'Endettement de ' + pct(x.endet), 'Dans la limite de 35 %, mais sans marge']);
+    else crit.push(['ko', 'Endettement de ' + pct(x.endet), 'Au-dessus du plafond HCSF de 35 %']);
+    // 2. Reste à vivre
+    crit.push(x.rav >= x.seuil
+      ? ['ok', 'Reste à vivre de ' + eur(x.rav) + '/mois', 'Seuil bancaire pour votre foyer ≈ ' + eur(x.seuil)]
+      : ['ko', 'Reste à vivre de ' + eur(x.rav) + '/mois', 'Inférieur au seuil ≈ ' + eur(x.seuil) + ' pour votre foyer']);
+    // 3. Apport
+    if (o.apport >= x.frais && o.apport >= 0.10*x.total) crit.push(['ok', 'Apport de ' + eur(o.apport), 'Couvre les frais et plus de 10 % du projet']);
+    else if (o.apport >= x.frais) crit.push(['ok', 'Apport de ' + eur(o.apport), 'Couvre les frais de notaire et de garantie']);
+    else if (o.apport > 0) crit.push(['warn', 'Apport de ' + eur(o.apport), 'Ne couvre pas les frais (' + eur(x.frais) + ') — attendu par la plupart des banques']);
+    else crit.push(['warn', 'Pas d\'apport', 'Financement à 110 % : possible mais rare, réservé aux très bons profils']);
+    // 4. Stabilité
+    if (x.nStable === x.contracts.length) crit.push(['ok', 'Situation professionnelle stable', x.hasIndep ? 'Indépendant : 3 derniers bilans demandés' : 'CDI / fonctionnaire']);
+    else if (x.nStable > 0) crit.push(['warn', 'Stabilité partielle', 'Un co-emprunteur en CDD / intérim']);
+    else crit.push(['warn', 'Contrat non pérenne', 'CDD / intérim : la banque demandera de l\'ancienneté']);
+    // 5. Comptes
+    crit.push(o.dec ? ['ok', 'Comptes bien tenus', 'Aucun découvert sur 3 mois'] : ['warn', 'Découverts récents', 'Point d\'attention systématique en banque']);
+
+    const hardFail = crit.some(c => c[0] === 'ko');
+    const warns = crit.filter(c => c[0] === 'warn').length;
+    let g;
+    if (hardFail) g = 'D';
+    else if (warns === 0 && o.apport >= 0.10*x.total && x.endet <= 0.33) g = 'A';
+    else if (warns === 0 || (warns === 1 && x.endet > 0.33 && o.apport >= x.frais && x.nStable === x.contracts.length && o.dec)) g = 'B';
+    else if (warns <= 2) g = 'C';
+    else g = 'D';
+    if (o.apport === 0 && (g === 'A' || g === 'B')) g = 'C';   // pratique HCSF : plafond à C sans apport
+    return {g, crit};
+  }
+
+  function levers(o, x){
+    const out = [];
+    if (x.endet > 0.33){
+      if (o.dur < 25){
+        const x25 = compute({...o, dur:25});
+        out.push('Passer à <b>25 ans</b> : mensualité de ' + eur(x25.mens) + ', endettement ' + pct(x25.endet) + '.');
+      }
+      const Lneed = x.Lmax;
+      const apportNeed = o.prix*(1+NOTAIRE) + o.trav + DOSSIER - Lneed*(1-GARANTIE);
+      if (x.pMax < o.prix*0.85) out.push('Cibler des biens jusqu\'à <b>' + eur(round1k(x.pMax)) + '</b> : c\'est votre budget réaliste aujourd\'hui.');
+      if (apportNeed > o.apport && apportNeed - o.apport <= 0.25*o.prix) out.push('Augmenter l\'apport à <b>' + eur(Math.ceil(apportNeed/1000)*1000) + '</b> (+' + eur(apportNeed - o.apport) + ') pour rentrer sous 35 %.');
+      if (x.pMax < o.prix && x.pMax > o.prix*0.85) out.push('Négocier le prix à <b>' + eur(round1k(x.pMax)) + '</b> (−' + pct(1 - x.pMax/o.prix, 0) + ').');
+      if (o.cred > 0){
+        const xs = compute({...o, cred:0});
+        out.push('Solder vos crédits en cours (' + eur(o.cred) + '/mois) : endettement ramené à ' + pct(xs.endet) + '.');
+      }
+    }
+    if (o.apport < x.frais) out.push('Réunir <b>' + eur(Math.ceil(x.frais/1000)*1000) + '</b> d\'apport pour couvrir les frais : c\'est le seuil qu\'attendent la plupart des banques.');
+    if (x.profil === 'std' && x.endet <= HCSF && o.apport >= x.frais) {
+      const kTop = factor(RATES.top[o.dur], o.dur);
+      out.push('Avec un meilleur taux (' + RATES.top[o.dur].toLocaleString('fr-FR') + ' %), mise en concurrence via un courtier : ≈ ' + eur(x.L*(x.k - kTop)*o.dur*12) + ' d\'économie sur la durée.');
+    }
+    if (x.nStable < x.contracts.length) out.push('En CDD / intérim : attendre 18 à 24 mois d\'ancienneté ou miser sur un co-emprunteur en CDI renforce le dossier.');
+    return out;
+  }
+
+  // ---------- Pièces ----------
+  const docChecked = new Set();
+  function docList(x, o){
+    const l = [['id','Pièce d\'identité', o.nb===2 ? 'Pour chaque emprunteur' : ''], ['dom','Justificatif de domicile','Moins de 3 mois'], ['imp','2 derniers avis d\'imposition','']];
+    const hasSal = x.contracts.some(c => c !== 'indep');
+    if (hasSal) l.push(['bul','3 derniers bulletins de salaire',''], ['ctr','Contrat de travail ou attestation employeur','']);
+    if (x.hasIndep) l.push(['bil','3 derniers bilans / liasses fiscales','Indépendant, libéral']);
+    l.push(['rel','3 derniers relevés de tous vos comptes','Montrent la bonne tenue des comptes']);
+    if (o.apport > 0) l.push(['app','Justificatif de l\'apport','Relevé d\'épargne, attestation de donation…']);
+    if (o.cred > 0) l.push(['cre','Tableaux d\'amortissement des crédits en cours','']);
+    if (o.trav > 0) l.push(['dev','Devis des travaux','']);
+    l.push(['cmp','Compromis de vente','Après acceptation de l\'offre']);
+    return l;
+  }
+  function renderDocs(x, o){
+    const l = docList(x, o);
+    $('docs').innerHTML = l.map(([k,t,s]) => '<li><label><input type="checkbox" data-doc="'+k+'"'+(docChecked.has(k)?' checked':'')+'><span>'+t+(s?'<small>'+s+'</small>':'')+'</span></label></li>').join('');
+    $('docs').querySelectorAll('input').forEach(i => i.addEventListener('change', () => {
+      i.checked ? docChecked.add(i.dataset.doc) : docChecked.delete(i.dataset.doc); docCount(l);
+    }));
+    docCount(l);
+  }
+  function docCount(l){
+    const n = l.filter(d => docChecked.has(d[0])).length;
+    $('docCount').textContent = n + ' / ' + l.length;
+    $('docProg').style.width = (100*n/l.length) + '%';
+    $('lDocs').textContent = n + ' / ' + l.length + ' réunies';
+  }
+
+  // ---------- Rendu ----------
+  function update(){
+    const o = {nb:state.nb, enf:state.enf, dur:state.dur, r1:val('r1'), r2:val('r2'), c1:$('c1').value, c2:$('c2').value,
+               cred:val('cred'), pens:val('pens'), loyer:val('loyer'), apport:val('apport'), prix:val('prix'), trav:val('trav'), dec:$('decouvert').checked};
+    $('r2wrap').classList.toggle('hidden', o.nb !== 2);
+    $('c2wrap').classList.toggle('hidden', o.nb !== 2);
+    $('r1lab').textContent = o.nb === 2 ? '— vous' : '';
+    $('c1lab').textContent = o.nb === 2 ? '— vous' : '';
+
+    const x = compute(o);
+    const {g, crit} = grade(o, x);
+
+    // Verdict
+    const v = $('verdict');
+    let cls, ico, title, text;
+    if (x.endet > HCSF){
+      cls='v-ko'; ico='!'; title='Ce bien dépasse votre budget actuel';
+      text='Votre endettement atteindrait ' + pct(x.endet) + ' (plafond bancaire : 35 %). Votre budget maximum est de ' + eur(round1k(x.pMax)) + ' — voir les leviers ci-dessous.';
+    } else if (x.rav < x.seuil){
+      cls='v-ko'; ico='!'; title='Reste à vivre trop juste';
+      text='L\'endettement passe, mais il vous resterait ' + eur(x.rav) + '/mois pour vivre : la banque attendra plutôt ' + eur(x.seuil) + '.';
+    } else if (g === 'C' || g === 'D'){
+      cls='v-mid'; ico='~'; title='Finançable, sous conditions';
+      text='Vos revenus permettent ce bien, mais votre dossier a des points faibles qu\'une banque relèvera. Un courtier peut le consolider.';
+    } else {
+      cls='v-ok'; ico='✓'; title='Ce bien est finançable pour vous';
+      text = x.endet > 0.33 ? 'Dans le cadre bancaire, mais avec peu de marge : dossier à soigner.' : 'Votre profil entre confortablement dans les critères bancaires sur ' + o.dur + ' ans.';
+    }
+    v.className = 'verdict ' + cls; $('vIco').textContent = ico; $('vTitle').textContent = title; $('vText').textContent = text;
+
+    // Mensualité
+    $('mens').textContent = eur(x.mens);
+    const diff = x.mens - o.loyer;
+    $('vsLoyer').textContent = o.loyer > 0 ? (diff >= 0 ? '+' + eur(diff) : '−' + eur(-diff)) + ' par rapport à votre loyer actuel (' + eur(o.loyer) + ')' : '';
+    const fill = $('endetFill');
+    fill.style.width = Math.min(100, x.endet/0.5*100) + '%';
+    fill.style.background = x.endet > HCSF ? 'var(--red)' : x.endet > 0.33 ? 'var(--amber)' : 'var(--green)';
+    $('endetLab').textContent = pct(x.endet);
+    $('taux').textContent = x.rate.toLocaleString('fr-FR',{minimumFractionDigits:2}) + ' % sur ' + o.dur + ' ans' + (x.profil==='top' ? ' · bon profil' : '');
+    $('cout').textContent = eur(x.cout);
+    $('rav').textContent = eur(x.rav) + ' / mois';
+    $('rav').style.color = x.rav < x.seuil ? 'var(--red)' : '';
+
+    // Plan
+    $('pfPrix').textContent = eur(o.prix);
+    $('pfNot').textContent = eur(x.notaire);
+    $('pfTravRow').classList.toggle('hidden', o.trav === 0);
+    $('pfTrav').textContent = eur(o.trav);
+    $('pfBank').textContent = eur(x.bank);
+    $('pfTot').textContent = eur(x.total);
+    $('pfApp').textContent = '− ' + eur(Math.min(o.apport, x.total));
+    $('pfPret').textContent = eur(x.L);
+
+    // Budget
+    const pm = round1k(x.pMax);
+    $('bMax').textContent = eur(pm);
+    $('bTxt').textContent = pm >= o.prix
+      ? 'Ce bien laisse ' + eur(pm - o.prix) + ' de marge sur votre budget (' + o.dur + ' ans).'
+      : 'Il manque ' + eur(o.prix - pm) + ' pour ce bien (' + o.dur + ' ans).';
+    $('bLink').textContent = 'Voir les biens jusqu\'à ' + (pm/1000).toLocaleString('fr-FR') + ' k€ à Lille →';
+
+    // Grade
+    const ge = $('grade'); ge.textContent = g; ge.className = 'grade g' + g;
+    $('crit').innerHTML = crit.map(([s,t,d]) => '<li class="'+s+'"><i>'+(s==='ok'?'✓':'!')+'</i><span>'+t+'<small>'+d+'</small></span></li>').join('');
+
+    // Leviers
+    const lv = levers(o, x);
+    $('leverCard').classList.toggle('hidden', lv.length === 0);
+    $('levers').innerHTML = lv.map(t => '<li><span>'+t+'</span></li>').join('');
+
+    // Lead agence
+    const lg = $('lGrade'); lg.textContent = 'Grade ' + g; lg.className = 'pill g' + g;
+    $('lFin').textContent = (x.endet <= HCSF && x.rav >= x.seuil) ? (g <= 'B' ? 'Pré-qualifié ✓' : 'À consolider') : 'Hors budget pour ce bien';
+    const lo = Math.floor(pm/10000)*10000;
+    $('lBud').textContent = (lo/1000).toLocaleString('fr-FR') + ' – ' + ((lo+10000)/1000).toLocaleString('fr-FR') + ' k€';
+    $('lApp').textContent = o.apport === 0 ? 'Aucun' : o.apport >= x.frais ? 'Oui, couvre les frais' : 'Partiel';
+    $('courtierBtn').className = 'btn' + ((g === 'C' || g === 'D') ? ' dark' : '');
+
+    // Prix affiché
+    $('recapPrice').textContent = eur(o.prix);
+
+    renderDocs(x, o);
+    $('sent').style.display = 'none';
+  }
+
+  $('consent').addEventListener('change', e => $('sendBtn').disabled = !e.target.checked);
+  $('sendBtn').addEventListener('click', () => { $('sent').style.display = 'block'; });
+  $('courtierBtn').addEventListener('click', () => { $('sent').textContent = '✓ Demande de rappel par un courtier partenaire envoyée (démonstration)'; $('sent').style.display = 'block'; });
+  $('sendBtn').addEventListener('click', () => { $('sent').textContent = '✓ Dossier transmis à l\'agence (démonstration)'; });
+
+  applyPreset(PRESETS.couple);
+})();
+</script>
+</body>
+</html>
